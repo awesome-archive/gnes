@@ -13,23 +13,21 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-# pylint: disable=low-comment-ratio
-
 
 from typing import List
 
 import numpy as np
 
-from ..base import CompositionalEncoder, BaseTextEncoder
+from ..base import CompositionalTrainableBase, BaseTextEncoder
 from ...helper import batching
 
 
 class BertEncoder(BaseTextEncoder):
     store_args_kwargs = True
+    is_trained = True
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.is_trained = True
         self._bc_encoder_args = args
         self._bc_encoder_kwargs = kwargs
 
@@ -41,18 +39,18 @@ class BertEncoder(BaseTextEncoder):
     def encode(self, text: List[str], *args, **kwargs) -> np.ndarray:
         return self.bc_encoder.encode(text, *args, **kwargs)  # type: np.ndarray
 
-
     def close(self):
         self.bc_encoder.close()
 
 
-class BertEncoderWithServer(CompositionalEncoder):
+class BertEncoderWithServer(CompositionalTrainableBase):
     def encode(self, text: List[str], *args, **kwargs) -> np.ndarray:
-        return self.component['bert_client'].encode(text, *args, **kwargs)
+        return self.components['bert_client'].encode(text, *args, **kwargs)
 
 
 class BertEncoderServer(BaseTextEncoder):
     store_args_kwargs = True
+    is_trained = True
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -61,7 +59,6 @@ class BertEncoderServer(BaseTextEncoder):
             bert_args.append('-%s' % k)
             bert_args.append(str(v))
         self._bert_args = bert_args
-        self.is_trained = True
 
     def post_init(self):
         from bert_serving.server import BertServer
@@ -69,7 +66,6 @@ class BertEncoderServer(BaseTextEncoder):
         self.bert_server = BertServer(get_args_parser().parse_args(self._bert_args))
         self.bert_server.start()
         self.bert_server.is_ready.wait()
-
 
     def close(self):
         self.bert_server.close()

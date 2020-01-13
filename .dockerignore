@@ -1,6 +1,9 @@
+# my ignore file
+.git/
 .pyre/
 .idea/
 docker-push.sh
+docker-build.sh
 download-models.sh
 docker-up.sh
 .orange-ci.yml
@@ -13,3 +16,7 @@ toy*
 release.sh
 shell/
 .tmp/
+.git/
+.github/
+Dockerfiles/
+.dockerignore

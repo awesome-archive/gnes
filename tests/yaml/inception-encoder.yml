@@ -1,5 +1,5 @@
-!BasePytorchEncoder
-parameter:
+!TorchvisionEncoder
+parameters:
   model_dir: ${INCEPTION_MODEL}
   model_name: inception_v3
   layers:
@@ -24,5 +24,5 @@ parameter:
     - torch.nn.functional.adaptive_avg_pool2d(x, (1, 1))
     - torch.nn.functional.dropout(x, training=False)
     - x.view(x.size(0), -1)
-property:
+gnes_config:
   is_trained: true

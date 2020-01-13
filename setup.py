@@ -1,3 +1,18 @@
+#  Tencent is pleased to support the open source community by making GNES available.
+#
+#  Copyright (C) 2019 THL A29 Limited, a Tencent company. All rights reserved.
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#  http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
 from os import path
 
 from setuptools import setup, find_packages
@@ -6,53 +21,70 @@ from setuptools.extension import Extension
 try:
     pkg_name = 'gnes'
     libinfo_py = path.join(pkg_name, '__init__.py')
-    libinfo_content = open(libinfo_py, 'r').readlines()
+    libinfo_content = open(libinfo_py, 'r', encoding='utf8').readlines()
     version_line = [l.strip() for l in libinfo_content if l.startswith('__version__')][0]
     exec(version_line)  # produce __version__
 except FileNotFoundError:
     __version__ = '0.0.0'
 
 try:
-    with open('README.md') as fp:
+    with open('README.md', encoding='utf8') as fp:
         _long_description = fp.read()
 except FileNotFoundError:
     _long_description = ''
 
 extensions = [
     Extension(
-        'gnes.indexer.vector.bindexer.cython',
-        ['gnes/indexer/vector/bindexer/bindexer.pyx'],
-        extra_compile_args=['-O3'],
+        'gnes.indexer.chunk.bindexer.cython',
+        ['gnes/indexer/chunk/bindexer/bindexer.pyx'],
+        extra_compile_args=['-O3', '-g0'],
     ),
     Extension(
-        'gnes.indexer.vector.hbindexer.cython',
-        ['gnes/indexer/vector/hbindexer/hbindexer.pyx'],
-        extra_compile_args=['-O3'],
+        'gnes.indexer.chunk.hbindexer.cython',
+        ['gnes/indexer/chunk/hbindexer/hbindexer.pyx'],
+        extra_compile_args=['-O3', '-g0'],
     ),
 ]
 
 base_dep = [
     'numpy',
-    'scipy',
     'termcolor',
     'protobuf',
     'grpcio',
     'ruamel.yaml>=0.15.89',
-    'aiohttp==3.5.4',
-    'pyzmq>=17.1.0',
-]
-bert_dep = ['bert-serving-server>=1.8.6', 'bert-serving-client>=1.8.6']
-elmo_dep = ['elmoformanylangs @ git+https://github.com/HIT-SCIR/ELMoForManyLangs.git@master#egg=elmoformanylangs-0.0.2',
-            'paramiko', 'pattern3']
-flair_dep = ['flair>=0.4.1']
-nlp_dep = list(set(bert_dep + flair_dep))
-annoy_dep = ['annoy==1.15.2']
-chinese_dep = ['jieba']
-cn_nlp_dep = list(set(chinese_dep + nlp_dep))
-vision_dep = ['torchvision==0.3.0', 'imagehash>=4.0']
-leveldb_dep = ['plyvel>=1.0.5']
-test_dep = ['pylint', 'memory_profiler>=0.55.0', 'psutil>=5.6.1', 'gputil>=1.4.0']
-all_dep = list(set(base_dep + cn_nlp_dep + vision_dep + leveldb_dep + test_dep + annoy_dep))
+    'pyzmq>=17.1.0']
+
+# using pip install gnes[xx] is depreciated
+# extras_dep is kept for legacy issue, will be removed soon
+
+extras_dep = {
+    'bert': ['bert-serving-server>=1.8.6', 'bert-serving-client>=1.8.6'],
+    # 'elmo': [
+    #     'elmoformanylangs @ git+https://github.com/HIT-SCIR/ELMoForManyLangs.git@master#egg=elmoformanylangs-0.0.2',
+    #     'paramiko', 'pattern3'],
+    'flair': ['flair>=0.4.1'],
+    'annoy': ['annoy==1.15.2'],
+    'chinese': ['jieba'],
+    'vision': ['opencv-python>=4.0.0', 'imagehash>=4.0', 'image', 'peakutils'],
+    'leveldb': ['plyvel>=1.0.5'],
+    'test': ['pylint', 'memory_profiler>=0.55.0', 'psutil>=5.6.1', 'gputil>=1.4.0'],
+    'transformers': ['pytorch-transformers'],
+    'onnx': ['onnxruntime'],
+    'audio': ['librosa>=0.7.0'],
+    'scipy': ['scipy', 'sklearn'],
+    'flask': ['flask'],
+    'aiohttp': ['aiohttp'],
+    'http': ['flask', 'aiohttp']
+}
+
+
+def combine_dep(new_key, base_keys):
+    extras_dep[new_key] = list(set(k for v in base_keys for k in extras_dep[v]))
+
+
+combine_dep('nlp', ['bert', 'flair', 'transformers'])
+combine_dep('cn_nlp', ['chinese', 'nlp'])
+combine_dep('all', [k for k in extras_dep if k != 'elmo'])
 
 setup(
     name=pkg_name,
@@ -75,19 +107,7 @@ setup(
     ],
     ext_modules=extensions,
     install_requires=base_dep,
-    extras_require={
-        'bert': bert_dep,
-        # 'elmo': elmo_dep,   # not welcome by pip
-        'flair': flair_dep,
-        'nlp': nlp_dep,
-        'annoy': annoy_dep,
-        'chinese': chinese_dep,
-        'cn_nlp': cn_nlp_dep,
-        'vision': vision_dep,
-        'leveldb': leveldb_dep,
-        'test': test_dep,
-        'all': all_dep,
-    },
+    extras_require=extras_dep,
     entry_points={
         'console_scripts': ['gnes=gnes.cli:main'],
     },

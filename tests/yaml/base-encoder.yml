@@ -1,10 +1,10 @@
 !PipelineEncoder
-component:
+components:
   - !BertEncoderWithServer
-    component:
+    components:
       bert_server:
         !BertEncoderServer
-        parameter:
+        parameters:
           args:
             - mask_cls_sep
           kwargs:
@@ -13,24 +13,24 @@ component:
             model_dir: $BERT_CI_MODEL
             max_seq_len: NONE
             pooling_layer: -12
-        property:
+        gnes_config:
           is_trained: true
       bert_client:
         !BertEncoder
-        parameter:
+        parameters:
           kwargs:
             port: $BERT_CI_PORT
             port_out: $BERT_CI_PORT_OUT
             ignore_all_checks: true
-        property:
+        gnes_config:
           is_trained: true
   - !PCALocalEncoder
-    parameter:
+    parameters:
       output_dim: 32
       num_locals: 8
-    property:
+    gnes_config:
       batch_size: 2048
   - !PQEncoder
-    parameter:
+    parameters:
       cluster_per_byte: 8
       num_bytes: 8

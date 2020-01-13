@@ -36,8 +36,8 @@ class dummyPipeline(PipelineEncoder):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.component = lambda: [foo1(*args, **kwargs),
-                                  foo2(*args, **kwargs), ]
+        self.components = lambda: [foo1(*args, **kwargs),
+                                   foo2(*args, **kwargs), ]
 
 
 class TestYaml(unittest.TestCase):
@@ -52,7 +52,7 @@ class TestYaml(unittest.TestCase):
         if os.path.exists(self.dump_path):
             os.remove(self.dump_path)
 
-    def test_siganature(self):
+    def test_signature(self):
         a = foo1(2)
         self.assertEqual(a._init_kwargs_dict, {'a': 2, 'b': 1})
         a = foo2(2, 3, 3)
@@ -91,7 +91,7 @@ class TestYaml(unittest.TestCase):
     def test_load(self):
         with open(self.dump_path, 'w') as fp:
             fp.write("!PipelineEncoder\n\
-                                parameter:\n\
+                                parameters:\n\
                                   kwargs:\n\
                                     a: 23\n\
                                     b: '32'\n\
@@ -107,7 +107,7 @@ class TestYaml(unittest.TestCase):
 
         with open(self.dump_path, 'w') as fp:
             fp.write("!PipelineEncoder\n\
-                                parameter:\n\
+                                parameters:\n\
                                   args:\n\
                                     - 23\n\
                                     - '32'\n\
